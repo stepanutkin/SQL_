@@ -1,0 +1,160 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"childIndexes" : 
+					[
+						1
+					],
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-.-Debug-d0094a50bb2071803777.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.21"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						0
+					]
+				},
+				{
+					"build" : "pqxx-build",
+					"childIndexes" : 
+					[
+						2,
+						3,
+						4
+					],
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-pqxx-build-Debug-847ef32e083a658bc81c.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.8"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 1,
+					"source" : "C:/Projects/libpqxx-7.9.0"
+				},
+				{
+					"build" : "pqxx-build/src",
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-pqxx-build.src-Debug-64804d02543005e79b37.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.8"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 1,
+					"source" : "C:/Projects/libpqxx-7.9.0/src",
+					"targetIndexes" : 
+					[
+						1
+					]
+				},
+				{
+					"build" : "pqxx-build/include",
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-pqxx-build.include-Debug-5185948a8580f35cb9c7.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.8"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 1,
+					"source" : "C:/Projects/libpqxx-7.9.0/include"
+				},
+				{
+					"build" : "pqxx-build/test",
+					"jsonFile" : "directory-pqxx-build.test-Debug-51c55c2284cb787cbafc.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.8"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 1,
+					"source" : "C:/Projects/libpqxx-7.9.0/test",
+					"targetIndexes" : 
+					[
+						2
+					]
+				}
+			],
+			"name" : "Debug",
+			"projects" : 
+			[
+				{
+					"childIndexes" : 
+					[
+						1
+					],
+					"directoryIndexes" : 
+					[
+						0
+					],
+					"name" : "SQL",
+					"targetIndexes" : 
+					[
+						0
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						1,
+						2,
+						3,
+						4
+					],
+					"name" : "libpqxx",
+					"parentIndex" : 0,
+					"targetIndexes" : 
+					[
+						1,
+						2
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 0,
+					"id" : "SQL::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-SQL-Debug-fadab339439da3be14db.json",
+					"name" : "SQL",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 2,
+					"id" : "pqxx::@32063c78aea34bff505c",
+					"jsonFile" : "target-pqxx-Debug-de6f6d1e78269b9b7064.json",
+					"name" : "pqxx",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 4,
+					"id" : "runner::@813ff6a9b2db031c2ef6",
+					"jsonFile" : "target-runner-Debug-e7853122450ebfa11a13.json",
+					"name" : "runner",
+					"projectIndex" : 1
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "C:/Projects/SQL/out/build/x64-Debug",
+		"source" : "C:/Projects/SQL"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 6
+	}
+}
