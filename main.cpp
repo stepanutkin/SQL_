@@ -1,197 +1,102 @@
 #include <iostream>
 #include <pqxx/pqxx>
-#include <string>
-#include <vector>
 
-class Personal_Inf {
-private:
-
-	std::string name;
-	std::string last_name;
-	std::string email;
-	std::string number;
-	std::string name_id;
-
-	pqxx::connection base;
-
+class ClientManager {
 public:
-	void create_table() {
-		pqxx::work txn(base);
-		std::string createTableQuery = "CREATE TABLE IF NOT EXISTS client ("
-			"id SERIAL PRIMARY KEY,"
-			"name VARCHAR(100) NOT NULL,"
-			"last_name VARCHAR(100) NOT NULL,"
-			"email VARCHAR(100) NOT NULL"
-			")";
-		txn.exec(createTableQuery);
-		txn.commit();
+    ClientManager() : connection("dbname=mydb user=myuser password=mypasswd") {}
 
-		pqxx::work pxn(base);
-		std::string createTableQuery1 = "CREATE TABLE IF NOT EXISTS number ("
-			"id SERIAL PRIMARY KEY,"
-			"number VARCHAR(100) NOT NULL,"
-			"name_id INT NOT NULL references client(id)"
-			")";
-		pxn.exec(createTableQuery1);
-		pxn.commit();
-	}
+    void initDbStructure() {
+        pqxx::work txn(connection);
+        txn.exec("CREATE TABLE IF NOT EXISTS clients (client_id SERIAL PRIMARY KEY, first_name TEXT, last_name TEXT, email TEXT)");
+        txn.exec("CREATE TABLE IF NOT EXISTS phone_numbers (phone_id SERIAL PRIMARY KEY, client_id INT REFERENCES clients(client_id), phone_number TEXT)");
+        txn.commit();
+    }
 
-	void insert_client() {
-		std::cout << "Введите имя клиента:";
-		std::cin >> name;
-		std::cout << "Введите фамилию клиента:";
-		std::cin >> last_name;
-		std::cout << "Введите email клиента:";
-		std::cin >> email;
+    int addClient(const std::string& firstName, const std::string& lastName, const std::string& email) {
+        int clientId = -1;
+        pqxx::work txn(connection);
 
-		pqxx::work tx(base);
-		tx.exec("INSERT INTO client(name,last_name,email) "
-			"VALUES('" + tx.esc(name) + "', '" + tx.esc(last_name) + "', '" + tx.esc(email) + "');");
-		tx.commit();
-	}
+        pqxx::result result = txn.exec("INSERT INTO clients (first_name, last_name, email) VALUES ('" + firstName + "', '" + lastName + "', '" + email + "') RETURNING client_id");
+        if (!result.empty()) {
+            clientId = result[0][0].as<int>();
+        }
 
-	void insert_client_number() {
-		try {
-			std::cout << "Введите номер телефона:";
-			std::cin >> number;
-			std::cout << "Введите id сотрудника:";
-			std::cin >> name_id;
+        txn.commit();
+        return clientId;
+    }
 
-			pqxx::work pt(base);
-			pt.exec("INSERT INTO number(number,name_id) "
-				"VALUES('" + pt.esc(number) + "', '" + pt.esc(name_id) + "');");
-			pt.commit();
-		}
-		catch (pqxx::sql_error e) {
-			std::cout << e.what() << std::endl;
-		}
-	}
+    void addPhoneNumber(int clientId, const std::string& phoneNumber) {
+        pqxx::work txn(connection);
+        txn.exec("INSERT INTO phone_numbers (client_id, phone_number) VALUES (" + std::to_string(clientId) + ", '" + phoneNumber + "')");
+        txn.commit();
+    }
 
-	void update_inf() {
-		pqxx::work ty(base);
-		unsigned int choice;
-		std::string id;
-		std::string change;
+    void updateClient(int clientId, const std::string& firstName, const std::string& lastName, const std::string& email) {
+        pqxx::work txn(connection);
+        txn.exec("UPDATE clients SET first_name = '" + firstName + "', last_name = '" + lastName + "', email = '" + email + "' WHERE client_id = " +
+            std::to_string(clientId));
+        txn.commit();
+    }
 
-		std::cout << "Что хотите изменить:"
-			"1.Имя  "
-			"2.Фамилию  "
-			"3.Email  "
-			"4.Номер телефона  " << std::endl;
-		std::cin >> choice;
+    void removeClient(int clientId) {
+        pqxx::work txn(connection);
+        txn.exec("DELETE FROM clients WHERE client_id = " + std::to_string(clientId));
+        txn.exec("DELETE FROM phone_numbers WHERE client_id = " + std::to_string(clientId));
+        txn.commit();
+    }
 
-		try {
-			std::cout << "Введите id сотрудника:";
-			std::cin >> id;
-			switch (choice) {
-			case 1:std::cout << "Введите имя:"; std::cin >> change; ty.exec("UPDATE client SET name = " + ty.esc(change) + " where id=" + id); break;
-			case 2:std::cout << "Введите фамилию:"; std::cin >> change; ty.exec("UPDATE client SET last_name = " + ty.esc(change) + " where id=" + id); break;
-			case 3:std::cout << "Введите email:"; std::cin >> change; ty.exec("UPDATE client SET email = " + ty.esc(change) + " where id=" + id); break;
-			case 4:std::cout << "Введите номер телефона:"; std::cin >> change; ty.exec("UPDATE number SET number = " + ty.esc(change) + " where name_id=" + id); break;
-			default:break;
-			}
-			ty.commit();
-		}
-		catch (pqxx::sql_error e) {
-			std::cout << e.what() << std::endl;
-		}
-	}
+    void findClient(const std::string& searchValue) {
+        pqxx::work txn(connection);
 
-	void delete_number() {
-		try {
-			std::string id;
-			std::cout << "Введите id сотрудника, чей телефон вы хотите удалить:";
-			std::cin >> id;
+        std::string query = "SELECT clients.client_id, clients.first_name, clients.last_name, clients.email, phone_numbers.phone_number "
+            "FROM clients "
+            "LEFT JOIN phone_numbers ON clients.client_id = phone_numbers.client_id WHERE clients.first_name = '"
+            + searchValue + "' OR "
+            "clients.last_name = '" + searchValue + "' OR "
+            "clients.email = '" + searchValue + "' OR "
+            "phone_numbers.phone_number = '" + searchValue + "'";
 
-			pqxx::work wt(base);
-			wt.exec("DELETE FROM number WHERE name_id = " + id);
-			wt.commit();
+        pqxx::result result = txn.exec(query);
 
-		}
-		catch (pqxx::sql_error e) {
-			std::cout << e.what() << std::endl;
-		}
-	}
+        for (pqxx::result::size_type i = 0; i < result.size(); ++i) {
+            std::cout << "Employee ID: " << result.at(i)[0].as<int>() << ", Name: " << 
+                result.at(i)[1].as<std::string>() << " " << 
+                result.at(i)[2].as<std::string>() << std::endl;
+        }
 
-	void delete_client() {
-		try {
-			std::string id;
-			std::cout << "Введите id сотрудника:";
-			std::cin >> id;
+        txn.commit();
+    }
 
-			pqxx::work wt(base);
-			wt.exec("DELETE FROM number WHERE name_id = " + id);
-			wt.exec("DELETE FROM client WHERE id = " + id);
-			wt.commit();
-
-		}
-		catch (pqxx::sql_error e) {
-			std::cout << e.what() << std::endl;
-		}
-	}
-
-	void search_client() {
-		try {
-			std::vector<std::string>data;
-			std::string info;
-
-			std::cout << "Введите имя клиента, если непомните, то введите любой символ:";
-			std::cin >> info;
-			data.push_back(info);
-
-			std::cout << "Введите фамилию клиента, если непомните, то введите любой символ:";
-			std::cin >> info;
-			data.push_back(info);
-
-			std::cout << "Введите email клиента, если непомните, то введите любой символ:";
-			std::cin >> info;
-			data.push_back(info);
-
-			std::cout << "Введите телефон клиента, если непомните, то введите любой символ:";
-			std::cin >> info;
-			data.push_back(info);
-
-			std::string query = "SELECT *, number.number FROM client  INNER JOIN number ON client.id = number.name_id WHERE "
-				"name = '" + data[0] + "' OR last_name = '" + data[1] + "' OR email ='" + data[2] + 
-				"' OR number ='" + data[3] + "';";
-
-			pqxx::work wt(base);
-			pqxx::result result = wt.exec(query);
-			for (pqxx::result::const_iterator row = result.begin(); row != result.end(); ++row) {
-				std::cout << "Client ID: " << row["id"].as<int>() << ", Name: " <<
-					row["name"].as<std::string>() << ", LastName: " << row["last_name"].as<std::string>() <<
-					", Email:" << row["email"].as<std::string>()<<", Number:"<<row["number"].as<std::string>()<< std::endl;
-			}
-			wt.commit();
-		}
-		catch (pqxx::sql_error e) {
-			std::cout << e.what() << std::endl;
-		}
-	}
-
-
-	Personal_Inf() :base("host=localhost port = 5432 dbname = personal_info user = postgres password = 13Afudoh@@") {}
+private:
+    pqxx::connection connection;
 };
 
 
 
 int main() {
 
-	setlocale(LC_ALL, "Russian");
+    setlocale(LC_ALL, "russian");
+    ClientManager clientManager;
 
-	Personal_Inf man;
-	//man.create_table();
-	//man.insert_client();
-	//man.insert_client_number();
-	//man.update_inf();
-	//man.delete_number();
-	//man.delete_client();
-	//man.search_client();
+    // Инициализация структуры БД
+    clientManager.initDbStructure();
 
-	return 0;
+    // Добавление клиента
+    int clientId = clientManager.addClient("Иван", "Иванов", "ivan@example.com");
+    clientManager.addPhoneNumber(clientId, "123-456-7890");
+    clientManager.addPhoneNumber(clientId, "987-654-3210");
+
+    // Поиск клиента
+    clientManager.findClient("Иван");
+
+    // Обновление данных клиента
+    clientManager.updateClient(clientId, "Петр", "Петров", "petr@example.com");
+
+    // Поиск обновленного клиента
+    clientManager.findClient("Петр");
+
+    // Удаление клиента
+    clientManager.removeClient(clientId);
+
+    return 0;
 }
-
-
-
-
-
